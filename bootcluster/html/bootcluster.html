@@ -1,0 +1,1809 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>bootcluster</title><meta name="generator" content="MATLAB 8.3"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2015-01-30"><meta name="DC.source" content="bootcluster.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput"><span class="keyword">function</span> [matBestTree, h, matAllSubtrees, matTreeLinkageSet, matLeafOrderPerm] = bootcluster(matInputData,cellDataLabels,intNumOfRounds,varargin)
+<span class="comment">%BOOTCLUSTER   bootstrapped clustering of data.</span>
+<span class="comment">%   [matBestTree] = bootcluster(matInputData) calculates the tree structure</span>
+<span class="comment">%   that has the highest sum of bootstrap scores over each bifurcation</span>
+<span class="comment">%   point. Bootstrapping is performed by subsampling to oversampling from</span>
+<span class="comment">%   the columns of the input data matrix, with a sampling ratio of</span>
+<span class="comment">%   0.5:0.1:1.4 (slightly more subsampling than oversampling).</span>
+<span class="comment">%</span>
+<span class="comment">%   matInputData will be clustered over the rows. If the number of rows is</span>
+<span class="comment">%   equal to the number of columns, the final visualization will apply the</span>
+<span class="comment">%   best clustering to both dimensions.</span>
+<span class="comment">%</span>
+<span class="comment">%   [matBestTree,h] = bootcluster(matInputData)</span>
+<span class="comment">%   also returns the figure handle h.</span>
+<span class="comment">%</span>
+<span class="comment">%   [~, ~, matAllSubtrees] = bootcluster(matInputData,cellDataLabels,intNumOfRounds,varargin)</span>
+<span class="comment">%   also returns the 3D stack of generated binary trees (as output by</span>
+<span class="comment">%   the linkage function)</span>
+<span class="comment">%</span>
+<span class="comment">%   [~, ~, ~, matTreeLinkageSet] = bootcluster(matInputData,cellDataLabels,intNumOfRounds,varargin)</span>
+<span class="comment">%   also returns the internal data structer that is used to count the</span>
+<span class="comment">%   occurence of each subtree in the set of trees of matAllSubtrees.</span>
+<span class="comment">%</span>
+<span class="comment">%   [~, ~, ~, ~, matLeafOrderPerm] = bootcluster(matInputData,cellDataLabels,intNumOfRounds,varargin)</span>
+<span class="comment">%   also returns that permutation required to reproduce the final</span>
+<span class="comment">%   clustering.</span>
+<span class="comment">%</span>
+<span class="comment">%   Note that this code uses parfor to make use of parallel computing.</span>
+<span class="comment">%   Search for the word 'parfor' and replace with 'for' if you do not want</span>
+<span class="comment">%   to use parallel processing.</span>
+<span class="comment">%</span>
+<span class="comment">%   Varying the number for the input parameter intNumOfRounds will greatly</span>
+<span class="comment">%   affect runtime but also the output. Consider lowering (10000) for</span>
+<span class="comment">%   faster runtimes on larger datasets, and increasing (1000000) for</span>
+<span class="comment">%   more robust clustering results.</span>
+<span class="comment">%</span>
+<span class="comment">%   The code is similar to described in</span>
+<span class="comment">%   http://ch.mathworks.com/help/bioinfo/examples/bootstrapping-phylogenetic-trees.html</span>
+<span class="comment">%   but differs in that it does not just count the number of equal clusters</span>
+<span class="comment">%   but exactly equal subtrees, and returns the best tree based on the sum</span>
+<span class="comment">%   of subtree bootstrap scores.</span>
+<span class="comment">%</span>
+<span class="comment">%   Example BOOTCLUSTER usage on the MATLAB fisheriris dataset:</span>
+<span class="comment">%</span>
+<span class="comment">%       X = load('fisheriris');</span>
+<span class="comment">%       matData = zscore(X.meas);</span>
+<span class="comment">%       cellSpecies = strcat(arrayfun(@(x) {[num2str(x),'_']},1:size(X.species,1))',X.species);</span>
+<span class="comment">%</span>
+<span class="comment">%       [matBestTree, h, matAllSubtrees, matTreeLinkageSet, matLeafOrderPerm] = bootcluster(matData,cellSpecies,100000);</span>
+<span class="comment">%</span>
+<span class="comment">%       % to plot just the best tree:</span>
+<span class="comment">%       view(phytree(matBestTree,cellSpecies))</span>
+<span class="comment">%</span>
+<span class="comment">%       % to compare this to non-bootstrapped clustering</span>
+<span class="comment">%       clustergram(matData,'RowLabels',X.species,'cluster',1)</span>
+<span class="comment">%</span>
+<span class="comment">%   Note that this code has several undocumented features. I would recommend</span>
+<span class="comment">%   reading through the source code prior to usage.</span>
+<span class="comment">%</span>
+<span class="comment">%   For more information to this code also read the help and information on</span>
+<span class="comment">%   its included subfunctions.</span>
+<span class="comment">%</span>
+<span class="comment">%</span>
+<span class="comment">%</span>
+<span class="comment">%   This code was first used and published in the following publication.</span>
+<span class="comment">%   Please cite this publication if you use this code in your research.</span>
+<span class="comment">%</span>
+<span class="comment">%   Single-cell analysis of population context advances RNAi screening at</span>
+<span class="comment">%   multiple levels.</span>
+<span class="comment">%   http://msb.embopress.org/content/8/1/579.long</span>
+<span class="comment">%</span>
+<span class="comment">%   Snijder B, Sacher R, R&auml;m&ouml; P, Liberali P, Mench K, Wolfrum N, Burleigh</span>
+<span class="comment">%   L, Scott CC, Verheije MH, Mercer J, Moese S, Heger T, Theusner K,</span>
+<span class="comment">%   Jurgeit A, Lamparter D, Balistreri G, Schelhaas M, De Haan CA,</span>
+<span class="comment">%   Marjom&auml;ki V, Hyypi&auml; T, Rottier PJ, Sodeik B, Marsh M, Gruenberg J,</span>
+<span class="comment">%   Amara A, Greber U, Helenius A, Pelkmans L.</span>
+<span class="comment">%</span>
+<span class="comment">%   Mol Syst Biol. 2012 Apr 24;8:579. doi: 10.1038/msb.2012.9.</span>
+<span class="comment">%</span>
+<span class="comment">%   See also https://github.com/pelkmanslab and</span>
+<span class="comment">%   http://msb.embopress.org/content/8/1/579.long and</span>
+<span class="comment">%   http://ch.mathworks.com/help/bioinfo/examples/bootstrapping-phylogenetic-trees.html.</span>
+<span class="comment">%</span>
+<span class="comment">%   Copyright 2015 Berend Snijder - bsnijder@gmail.com</span>
+
+
+
+    matLeafOrderPerm = [];
+
+    <span class="keyword">if</span> nargin==0
+        <span class="comment">% if the number of input arguments is 0, run in demo mode.</span>
+
+        warning(<span class="string">'bs:Bla'</span>,<span class="string">'Running in demo mode using the ''fisheriris'' dataset'</span>)
+        X = load(<span class="string">'fisheriris'</span>);
+        matInputData = zscore(X.meas);
+        cellDataLabels = strcat(arrayfun(@(x) {[num2str(x),<span class="string">'_'</span>]},1:size(X.species,1))',X.species);
+
+    <span class="keyword">elseif</span> nargin==1
+
+        fprintf(<span class="string">'%s: no data labels given\n'</span>,mfilename)
+        cellDataLabels = num2strcell(1:size(matInputData,1));
+    <span class="keyword">elseif</span> length(cellDataLabels) ~= size(matInputData,1)
+
+        fprintf(<span class="string">'%s: data label size does not match data size. Using default\n'</span>,mfilename)
+        cellDataLabels = num2strcell(1:size(matInputData,1));
+    <span class="keyword">end</span>
+
+    <span class="comment">% how many trees to generate</span>
+    <span class="keyword">if</span> nargin&lt;3
+        intNumOfRounds = 1000000;
+    <span class="keyword">end</span>
+
+    <span class="comment">% bootstrap sample sizes (ratio of fraction) with resampling, loosly</span>
+    <span class="comment">% modelled after what is done in the R-package pvclust.</span>
+    matRs = [0.5 0.6 0.7 0.8 0.9 1 1.1 1.2 1.3 1.4];
+
+    <span class="comment">% get data dimensions</span>
+    [nRow,nCol] = size(matInputData);
+
+    <span class="comment">% check if there are NaNs present in the data. We are nan-robust, but it's</span>
+    <span class="comment">% much slower, so preferably avoid NaNs if possible.</span>
+    <span class="keyword">if</span> any(isnan(matInputData(:)))
+        fprintf(<span class="string">'%s: found %d NaNs in data, using slower nan-robust correlation distance\n'</span>,mfilename,sum(isnan(matInputData(:))))
+        boolNaNsPresent = true;
+    <span class="keyword">else</span>
+        boolNaNsPresent = false;
+    <span class="keyword">end</span>
+
+    boolUserFunc = false;
+    strFuncHandle = <span class="string">'correlation'</span>; <span class="comment">%default function</span>
+    boolCorr = true;
+    matPossibleFunctionHandle = cellfun(@(x) isa(x,<span class="string">'function_handle'</span>),varargin);
+    <span class="keyword">if</span> any(matPossibleFunctionHandle) &amp; numel(matPossibleFunctionHandle)&gt;0
+        strFuncHandle = varargin{find(matPossibleFunctionHandle,1,<span class="string">'first'</span>)};
+        fprintf(<span class="string">'%s: detected user-passed function handle ''%s'', using this for distance measure\n'</span>,mfilename,func2str(strFuncHandle))
+        boolUserFunc = true;
+        boolCorr = false;
+    <span class="keyword">end</span>
+
+    boolCorrEucl = cellfun(@(x) strcmpi(x,<span class="string">'pdist_corr_eucl'</span>),varargin);
+    <span class="keyword">if</span> boolCorrEucl
+        boolCorr = false;
+        disp(<span class="string">'doing fast experimental correlation + euclidean method'</span>)
+    <span class="keyword">elseif</span> boolCorr
+        disp(<span class="string">'doing fast correlation method'</span>)
+    <span class="keyword">end</span>
+
+    matPossibleRGBColors = cellfun(@(x) isa(x,<span class="string">'double'</span>) &amp; size(x,3)==3,varargin);
+    boolUserRGB = false;
+    <span class="keyword">if</span> any(matPossibleRGBColors) &amp; numel(matPossibleRGBColors)&gt;0
+        matRGB = varargin{find(matPossibleRGBColors,1,<span class="string">'first'</span>)};
+        fprintf(<span class="string">'%s: detected user-passed colormap\n'</span>,mfilename)
+        boolUserRGB = true;
+    <span class="keyword">end</span>
+
+    <span class="comment">% initialize the matrix containing all the tree linkages from the</span>
+    <span class="comment">% bootstrapping procedure</span>
+    matTreeLinkageSet = zeros(nRow-1,3,intNumOfRounds);
+
+    fprintf(<span class="string">'%s: starting %d bootstrap runs\n'</span>,mfilename,intNumOfRounds)
+
+    iBCounter = 0;
+    <span class="comment">% loop over each bootstrap sample size</span>
+    <span class="keyword">for</span> r = matRs
+        tic;
+        fprintf(<span class="string">'%s: processing ratio %g'</span>,mfilename,r)
+
+        <span class="comment">% parallel loop over each bootstrap (where the total number of</span>
+        <span class="comment">% bootstraps is divided by the number of bootstrap sample sizes)</span>
+        <span class="keyword">parfor</span> iBoot = 1:round(intNumOfRounds / length(matRs))
+
+            <span class="comment">% randomly sample with replacement from all columns, according to</span>
+            <span class="comment">% the current bootstrap sample size</span>
+            data = single(matInputData(:,randsample(nCol,floor(nCol*r),true))); <span class="comment">%#ok&lt;PFBNS&gt;</span>
+
+            <span class="comment">% calculate correlation distance matrix, NaN-robust if NaNs are</span>
+            <span class="comment">% present</span>
+            <span class="keyword">if</span> boolNaNsPresent
+                distancematrix = squareform_bs(1-corr(data',<span class="string">'rows'</span>,<span class="string">'pairwise'</span>));
+            <span class="keyword">else</span>
+                <span class="keyword">if</span> boolCorrEucl
+                    <span class="comment">% I noticed pdist_corr_eucl does not do sqrt of euclidean</span>
+                    <span class="comment">% distance...</span>
+                    distancematrix = abs(bsxfun(@plus,dot(data',data',1)',dot(data',data',1))-2*(data*data'));
+                    distancematrix = (distancematrix ./ max(distancematrix(:)))  + ((1 - corr(data'))/2);
+                    distancematrix(isnan(distancematrix)) = 2;
+                <span class="keyword">elseif</span> boolCorr
+                    distancematrix = 1-corr(data');
+                <span class="keyword">else</span>
+                    distancematrix = pdist(data,strFuncHandle);
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+
+            <span class="comment">% set NaN-distance to max distance of 2.</span>
+            distancematrix(isnan(distancematrix)) = 2;
+
+            <span class="comment">% calculate linkage</span>
+            t = linkage(distancematrix,<span class="string">'average'</span>);
+
+            <span class="keyword">if</span> any(isnan(t(:,3)))
+                keyboard
+            <span class="keyword">end</span>
+
+            <span class="comment">% store linkage for current bootstrap in matTreeLinkageSet</span>
+            matTreeLinkageSet(:,:,iBCounter+iBoot) = t;
+
+        <span class="keyword">end</span>
+
+        <span class="comment">% increment counter (outside of parfor loop)</span>
+        iBCounter = iBCounter + round(intNumOfRounds / length(matRs));
+        fprintf(<span class="string">' (in %.1fs)\n'</span>,toc)
+    <span class="keyword">end</span>
+
+
+    <span class="comment">% count how often each identical subtree occurs in the set of linkages</span>
+    [matAllSubtrees, matTreeLinkageSet] = analyze_subtrees_in_linkages(matTreeLinkageSet);
+
+    <span class="comment">% calculate the sum subtree score for each node of the entire tree</span>
+    matSumSubtreeFrequencyPerTree = NaN(size(matTreeLinkageSet,3),1);
+
+    <span class="keyword">for</span> iTree = 1:size(matTreeLinkageSet,3)
+
+        <span class="comment">% sum edge scores</span>
+        matSumSubtreeFrequencyPerTree(iTree) = sum(matAllSubtrees(matTreeLinkageSet(:,4,iTree),4));
+
+    <span class="keyword">end</span>
+
+
+    <span class="comment">% find the tree with the highest sum of subtree frequencies</span>
+    [~,intMaxIX] = max(matSumSubtreeFrequencyPerTree);
+
+    <span class="comment">% store best tree for output</span>
+    matBestTree = matTreeLinkageSet(:,1:3,intMaxIX);
+
+
+    <span class="comment">% create a phytree object from linkage, present in the Matlab</span>
+    <span class="comment">% Bioinformatics Toolbox. Note that only the first three columns should be</span>
+    <span class="comment">% passed, as the fourth column contains the subtree-id for each</span>
+    <span class="comment">% branchpoint.</span>
+    objPhyTree = phytree(matBestTree,cellDataLabels);
+
+    <span class="comment">% plot the tree</span>
+    h = plot(objPhyTree,<span class="string">'Type'</span>,<span class="string">'square'</span>);
+    drawnow
+
+    <span class="keyword">for</span> iBranch = 1:length(h.branchNodeLabels)
+
+        <span class="comment">% get the handle to the current branch</span>
+        hBranch = h.branchNodeLabels(iBranch);
+
+        <span class="comment">% calculate absolute and percentage occurence of current branch</span>
+        intSubtreePercent = 100*matAllSubtrees(matTreeLinkageSet(iBranch,4,intMaxIX),4);
+        intSubtreeCount = round(intNumOfRounds*matAllSubtrees(matTreeLinkageSet(iBranch,4,intMaxIX),4));
+
+        <span class="comment">% add text-label to each branch, different for root than for other branches</span>
+        <span class="keyword">if</span> iBranch == length(h.branchNodeLabels)
+            <span class="comment">% root</span>
+            set(hBranch,<span class="string">'Visible'</span>,<span class="string">'on'</span>,<span class="string">'String'</span>,sprintf(<span class="string">'\\color[rgb]{0 0 0.75}subtree %% and absolute count (%.0f%% and %d times for root)'</span>,intSubtreePercent,intSubtreeCount), <span class="keyword">...</span>
+                <span class="string">'FontSize'</span>,8,<span class="keyword">...</span>
+                <span class="string">'Interpreter'</span>,<span class="string">'TeX'</span>,<span class="keyword">...</span>
+                <span class="string">'HorizontalAlignment'</span>,<span class="string">'center'</span>,<span class="keyword">...</span>
+                <span class="string">'VerticalAlignment'</span>,<span class="string">'bottom'</span>,<span class="keyword">...</span>
+                <span class="string">'Rotation'</span>,90)
+        <span class="keyword">else</span>
+            <span class="comment">% branch</span>
+            set(hBranch,<span class="string">'Visible'</span>,<span class="string">'on'</span>,<span class="string">'String'</span>,sprintf(<span class="string">'\\color[rgb]{0 0 0.75}%.0f%% (%d)'</span>,intSubtreePercent,intSubtreeCount),<span class="keyword">...</span>
+                <span class="string">'FontSize'</span>,7,<span class="keyword">...</span>
+                <span class="string">'Interpreter'</span>,<span class="string">'TeX'</span>)
+        <span class="keyword">end</span>
+
+    <span class="keyword">end</span>
+
+
+
+    <span class="keyword">if</span> ~any(cellfun(@(x) strcmpi(x,<span class="string">'noheat'</span>),varargin))
+
+    <span class="comment">% experimental, let's add a heatmap that has the ordered data in the right</span>
+    <span class="comment">% order next to the tree.</span>
+
+    <span class="comment">% shrink the width of the dendogram</span>
+    matDendogramPosition = get(h.axes,<span class="string">'Position'</span>);
+    matDendogramPosition = matDendogramPosition.*[1,1,.3,1];
+    set(h.axes,<span class="string">'Position'</span>,matDendogramPosition);
+    <span class="comment">% remove box and background color</span>
+    set(h.axes,<span class="string">'Box'</span>,<span class="string">'off'</span>)
+    set(h.axes,<span class="string">'Color'</span>,<span class="string">'none'</span>)
+    set(h.axes,<span class="string">'Visible'</span>,<span class="string">'off'</span>)
+
+
+
+    <span class="comment">% the reordering of the data rows is dependent on the leaf-order of the</span>
+    <span class="comment">% dendogram</span>
+    [~,matLeafOrderPerm] = ismember(get(objPhyTree,<span class="string">'LeafNames'</span>),cellDataLabels);
+
+    <span class="comment">% get leaf positions</span>
+    set(h.terminalNodeLabels,<span class="string">'Visible'</span>,<span class="string">'off'</span>)
+    <span class="comment">% matLeafPositions = get(h.leafNodeLabels,'Position');</span>
+
+    <span class="comment">% calculate heatmap axis position</span>
+    <span class="comment">% matHeatMapAxisPosition = [matDendogramPosition(1) + matDendogramPosition(3),matDendogramPosition(2),1-(matDendogramPosition(1) + matDendogramPosition(3)+0.05),matDendogramPosition(4)];</span>
+
+    matHeatMapAxisPosition = matDendogramPosition;
+    <span class="comment">% left start: start after dendogram (i.e. offset + width)</span>
+    matHeatMapAxisPosition(1) = matHeatMapAxisPosition(1) + matHeatMapAxisPosition(3);
+    <span class="comment">% width: entire figure width minus width of dendogram (see start), plus</span>
+    <span class="comment">% margin for labels.</span>
+    matHeatMapAxisPosition(3) = 1 - (matHeatMapAxisPosition(1) + 0.1);
+    <span class="comment">% bottom: a bit higher than dendogram.</span>
+    matHeatMapAxisPosition(2) = matHeatMapAxisPosition(2) * 1.6;
+    <span class="comment">% height: less than dendogram</span>
+    matHeatMapAxisPosition(4) = matHeatMapAxisPosition(4) - (matDendogramPosition(2)*1.2);
+
+    <span class="comment">% %%% experimental column ordering...</span>
+    <span class="comment">% % calculate column ordering from  a single clustering...</span>
+    <span class="comment">% Y1 = pdist(data4bootstrap',@pdist_corr);</span>
+    <span class="comment">% Z1 = linkage(Y1,'average');</span>
+    <span class="comment">% hDend = figure();</span>
+    <span class="comment">% [~,~,matColPerm] = dendrogram(Z1)</span>
+    <span class="comment">% close(hDend)</span>
+    <span class="comment">% %%% end experiment</span>
+
+
+    <span class="comment">% create new axis and draw heatmap in right order (according to leafs)</span>
+    hold <span class="string">on</span>
+    hMap = axes(<span class="string">'Position'</span>,matHeatMapAxisPosition);
+    <span class="comment">% hMap = axes();</span>
+    <span class="comment">% colormap(flipud(smoothcolormap(redbluecmap)))</span>
+    colormap(flipud(smoothcolormap(redgreencmap)))
+    <span class="comment">% matZscores = nanzscore(data4bootstrap')';</span>
+    <span class="comment">% if we're dealing with a square matrix, order both rows and columns</span>
+    <span class="comment">% according to clustering. otherwise just the rows.</span>
+
+    <span class="keyword">if</span> boolUserRGB
+        <span class="comment">% user supplied colors</span>
+        imagesc(matRGB(matLeafOrderPerm,matLeafOrderPerm,:));
+    <span class="keyword">elseif</span> size(matInputData,1)==size(matInputData,2)
+        <span class="comment">% for colors, assume distance matrix: [-1, 1]</span>
+        imagesc(matInputData(matLeafOrderPerm,matLeafOrderPerm),[-1,1])
+    <span class="keyword">else</span>
+    <span class="comment">%     imagesc(data4bootstrap(matLeafOrderPerm,:),[-1.5,1.5])</span>
+        imagesc(matInputData(matLeafOrderPerm,:),[-5 5])
+    <span class="keyword">end</span>
+    set(hMap, <span class="keyword">...</span>
+        <span class="string">'Box'</span>,<span class="string">'off'</span>,<span class="keyword">...</span>
+        <span class="string">'YTick'</span>,[1:length(cellDataLabels)],<span class="keyword">...</span>
+        <span class="string">'XTick'</span>,[],<span class="keyword">...</span>
+        <span class="string">'YAxisLocation'</span>,<span class="string">'right'</span>,<span class="keyword">...</span>
+        <span class="string">'YTickLabel'</span>,cellDataLabels(matLeafOrderPerm),<span class="keyword">...</span>
+        <span class="string">'TickDir'</span>,<span class="string">'out'</span>,<span class="keyword">...</span>
+        <span class="string">'FontSize'</span>,8 <span class="keyword">...</span>
+        );
+
+    <span class="keyword">end</span>
+
+
+    title(sprintf(<span class="string">'Tree with highest sum of subtree frequencies over %d bootstraps.'</span>,intNumOfRounds))
+
+    hold <span class="string">off</span>
+
+    drawnow
+
+<span class="keyword">end</span><span class="comment">% and we are done :)</span>
+
+
+<span class="keyword">function</span> c = num2strcell(n, format)
+    <span class="comment">% num2strcell Convert vector of numbers to cell array of strings</span>
+    <span class="comment">% function c = num2strcell(n, format)</span>
+    <span class="comment">%</span>
+    <span class="comment">% If format is omitted, we use</span>
+    <span class="comment">% c{i} = sprintf('%d', n(i))</span>
+
+    <span class="keyword">if</span> nargin &lt; 2, format = <span class="string">'%d'</span>; <span class="keyword">end</span>
+
+    N = numel(n);
+    c = cell(size(n));
+    <span class="keyword">for</span> i=1:N
+      c{i} = sprintf(format, n(i));
+    <span class="keyword">end</span>
+
+<span class="keyword">end</span>
+
+
+
+
+<span class="keyword">function</span> [matAllSubtrees, matOrigTreeLinkageSet] = analyze_subtrees_in_linkages(matTreeLinkageSet)
+<span class="comment">% function analyze_subtrees_in_linkages(matTreeLinkageSet)</span>
+
+<span class="comment">% Help for analyze_subtrees_in_linkages</span>
+<span class="comment">%</span>
+<span class="comment">% Usage:</span>
+<span class="comment">%</span>
+<span class="comment">% [matAllSubtrees, matOrigTreeLinkageSet] = analyze_subtrees_in_linkages(matTreeLinkageSet)</span>
+<span class="comment">%</span>
+<span class="comment">%</span>
+<span class="comment">% Input: matTreeLinkageSet is a series of linkages (agglomerative</span>
+<span class="comment">% hierarchical cluster trees) as ouptut by the matlab function "linkage".</span>
+<span class="comment">% The linkages should be concatenated in the third dimension, and contain</span>
+<span class="comment">% the same leaf nodes. Typically, they are bootstrapped trees from the same</span>
+<span class="comment">% data. matTreeLinkageSet size is [m, 3, n], where m is the number of</span>
+<span class="comment">% leafs-1, and n is the number of bootstraps.</span>
+<span class="comment">%</span>
+<span class="comment">% output: matAllSubtrees</span>
+<span class="comment">% matAllSubtrees is a matrix similar to output of linkage, except that the</span>
+<span class="comment">% columns have the following values, which result from aggregating all</span>
+<span class="comment">% trees in matTreeLinkageSet:</span>
+<span class="comment">%</span>
+<span class="comment">% SUBTREE-ID | SUBTREE-ID-NODE1 | SUBTREE-ID-NODE2 | SUBTREE-COUNT</span>
+<span class="comment">%</span>
+<span class="comment">%</span>
+<span class="comment">% output: matOrigTreeLinkageSet</span>
+<span class="comment">% matOrigTreeLinkageSet contains the original input matTreeLinkageSet with</span>
+<span class="comment">% column 4 containing the new index, or SUBTREE-ID of each branch,</span>
+<span class="comment">% corresponding to the SUBTREE-ID in matAllSubtrees.</span>
+<span class="comment">%</span>
+<span class="comment">% Looking up the bootstrap frequency of each subtree-id in the fourth</span>
+<span class="comment">% column of matTreeLinkageSet allows one to calculate total scores per</span>
+<span class="comment">% tree.</span>
+<span class="comment">%</span>
+<span class="comment">% Berend Snijder, 2011.</span>
+
+
+<span class="comment">% count number of leafs.</span>
+intLeafCount = size(matTreeLinkageSet,1)+1;
+
+<span class="comment">% count number of bootstraps.</span>
+intBootstrapCount = size(matTreeLinkageSet,3);
+
+<span class="comment">% report</span>
+fprintf(<span class="string">'%s: starting subtree analysis on %d bootstrapped trees, each with %d leafs\n'</span>,mfilename,intBootstrapCount,intLeafCount)
+
+<span class="comment">% Sort to always have lowest number in first column and higher number in</span>
+<span class="comment">% second column, which equals rotating branches. Since we are returning</span>
+<span class="comment">% this, it means we are not preserving tree-structures perfectly between</span>
+<span class="comment">% input and output, but i don't see how that will hurt anybody now. (we</span>
+<span class="comment">% could store sorting and return to original sorting at end of script.)</span>
+fprintf(<span class="string">'%s: rotating branches of all trees\n'</span>,mfilename)
+matTreeLinkageSet(:,[1,2]) = sort(matTreeLinkageSet(:,[1,2]),2);
+
+<span class="comment">% keep copy of original tree structure, with added fourth column of zeros</span>
+<span class="comment">% to put in the subtree-ids.</span>
+matOrigTreeLinkageSet = [matTreeLinkageSet(:,1:3,:),zeros(intLeafCount-1,1,intBootstrapCount)];
+
+<span class="comment">% discard distance data from the trees set</span>
+matTreeLinkageSet(:,3:end,:) = [];
+</pre><p>we can first get a listing of all unique linkages and leaf-sets that connect assay-pairs (leafs) directly. for these connections we can do the fast sorted-unique-last trick which get's all unique assay-links and their counts pretty fast. this takes care of about half of all branches in the entire dataset and should speed up the algorithm considerably.</p><pre class="codeinput"><span class="comment">% report</span>
+fprintf(<span class="string">'%s: analyzing all branch points that connect two leaf sets\n'</span>,mfilename)
+
+<span class="comment">% let's reshape matTreeLinkageSet such that all bootstrapped trees are</span>
+<span class="comment">% concatenated below eachother, i.e. final size equals:</span>
+<span class="comment">% size = [(intLeafCount-1) * intBootstrapCount, 2]</span>
+matTreeLinkageSet=matTreeLinkageSet(:,:);
+matTreeLinkageSet=[lin(matTreeLinkageSet(:,1:2:end-1)),lin(matTreeLinkageSet(:,2:2:end))];
+
+<span class="comment">% a quick sanity check, note that this is always passed</span>
+<span class="keyword">if</span> not(<span class="keyword">...</span>
+        isequal(matTreeLinkageSet(1:(intLeafCount-1),:),matOrigTreeLinkageSet(:,1:2,1)) &amp;&amp; <span class="keyword">...</span>
+        isequal(matTreeLinkageSet(end-(intLeafCount-2):end,:),matOrigTreeLinkageSet(:,1:2,end)))
+    error(<span class="string">'hm, reformatting of data failed'</span>)
+<span class="keyword">end</span>
+
+
+<span class="comment">% here's a neat trick, since for the assay-connections at least the edges</span>
+<span class="comment">% can be considered sub-indices of a [(intLeafCount*2)-1 * (intLeafCount*2)-1]</span>
+<span class="comment">% size matrix, therefore we can process the indices as unique identifiers</span>
+<span class="comment">% for the edges (subindices) at least for those edges that directly connect</span>
+<span class="comment">% leafs.</span>
+
+<span class="comment">% this is the dimension of the matrix via which we do the subindex --&gt;</span>
+<span class="comment">% index reformatting.</span>
+matMatrixSize = [(intLeafCount*2)-1,(intLeafCount*2)-1];
+<span class="comment">% now do the sub-index to index remapping.</span>
+matEdgeSubIX = sub2ind(matMatrixSize,matTreeLinkageSet(:,1),matTreeLinkageSet(:,2));
+
+<span class="comment">% now get the branches that connect two assays directly, and get the unique</span>
+<span class="comment">% mapping for the indices for those branches.</span>
+matTwoLeafsBranchIX = logical(matTreeLinkageSet(:,1)&lt;=intLeafCount &amp; matTreeLinkageSet(:,2)&lt;=intLeafCount);
+
+<span class="comment">% count how often each unique branch occurs</span>
+[matCountPerValue,matUniqueValues,matIX2] = countNumberOfValues(matEdgeSubIX(matTwoLeafsBranchIX));
+
+<span class="comment">% report</span>
+fprintf(<span class="string">'%s: \t found %d unique branches connecting two leaf sets, making up %.1f%% of all branches\n'</span>,<span class="keyword">...</span>
+        mfilename,<span class="keyword">...</span>
+        length(matCountPerValue),<span class="keyword">...</span>
+        (100*(sum(matTwoLeafsBranchIX)/((intLeafCount-1)*intBootstrapCount)))<span class="keyword">...</span>
+    )
+
+<span class="comment">% put the subtree-ids of branches connecting two leafs in the fourth column</span>
+<span class="comment">% of the output matOrigTreeLinkageSet.</span>
+<span class="comment">% Note that the subtree-ids must be offset with intLeafCount, as</span>
+<span class="comment">% subtree-ids 1 to intLeafCount are reserved for leafs.</span>
+matTreeLinkageSet2 = zeros([intLeafCount-1,1,intBootstrapCount]);
+matTreeLinkageSet2(matTwoLeafsBranchIX) = matIX2+intLeafCount;
+matOrigTreeLinkageSet(:,4,:) = matTreeLinkageSet2;
+<span class="comment">% we can get rid of some large variables now</span>
+clear <span class="string">matTwoLeafsBranchIX</span> <span class="string">matTreeLinkageSet2</span> <span class="string">matTreeLinkageSet</span> <span class="string">matEdgeSubIX</span> <span class="string">matTwoLeafsBranchIX</span>
+
+<span class="comment">% Start filling in our collection of subtrees in matAllSubtrees</span>
+<span class="comment">% Note again, that the first link-id should begin after intLeafCount.</span>
+<span class="comment">% matAllSubtrees = [ SUBTREE-ID |  NODE-1  |  NODE-2  |  OCCURENCE-OF-SUBTREE ]</span>
+
+<span class="comment">% fill in bogus 'ones' for the node-ids and occurence of subtrees</span>
+matAllSubtrees = [(1:intLeafCount)',ones(intLeafCount,3)];
+<span class="comment">% append the subtree data for the branches linking two leafs</span>
+matAllSubtrees = [matAllSubtrees;[(1:size(matUniqueValues,1))'+intLeafCount,ind2sub2(matMatrixSize,matUniqueValues),matCountPerValue]];
+clear <span class="string">matUniqueValues</span> <span class="string">matCountPerValue</span> <span class="string">matMatrixSize</span>
+</pre><p>Now we start processing all higher-order subtrees. To keep track of all possible subtrees, I mark them in an growing 2D connection matrix, growing as we process higher order subtrees from the set of linkages. We keep track of each subtree by their subtree-id, which is the subindex of its connection in the 2D connection matrix. As the connection matrix is growing, we need to recalculate the subtree-indices.</p><pre class="codeinput"><span class="comment">% set current subtree-id</span>
+intCurrentSubtreeID = max(matAllSubtrees(:,1));
+
+<span class="comment">% pre-initialize matAllLinkIndices.</span>
+<span class="comment">%</span>
+<span class="comment">% matAllLinkIndices is a vector that contains the subindices for all unique</span>
+<span class="comment">% subtrees.</span>
+matAllLinkIndices = sub2ind([intCurrentSubtreeID,intCurrentSubtreeID],matAllSubtrees(:,2),matAllSubtrees(:,3));
+
+<span class="comment">% add some padding to pre-allocate memory in matAllSubtrees and</span>
+<span class="comment">% matAllLinkIndices... make a guess: "(1/4)*intLeafCount*intBootstrapCount"</span>
+matAllSubtrees = [matAllSubtrees;zeros((1/4)*intLeafCount*intBootstrapCount,4)];
+
+<span class="comment">% report</span>
+fprintf(<span class="string">'%s: starting higher-order subtree analysis\n'</span>,mfilename)
+<span class="keyword">for</span> i = 1:intLeafCount-1
+    <span class="comment">% fprintf('%s: processing subtrees at depth %d of %d\n',mfilename,i,intLeafCount-1)</span>
+
+    <span class="comment">% Get the slice from the current tree samples corresponding to the next</span>
+    <span class="comment">%-in-line subtrees.</span>
+    matTs = squeeze(matOrigTreeLinkageSet(i,:,:))';
+
+    <span class="comment">% See which edges haven't been processed yet (i.e. which don't yet have</span>
+    <span class="comment">% a subtree-index stored in the fourth column of the corresponding</span>
+    <span class="comment">% rows)</span>
+    matIXToProc = find(matTs(:,4)==0);
+
+    <span class="comment">% If there are none to process, continue to next subtree slice</span>
+    <span class="keyword">if</span> isempty(matIXToProc)
+        <span class="keyword">continue</span>
+    <span class="keyword">end</span>
+</pre><p>PROCESS SUBTREE-COUNTS And store in matOrigTreeLinkageSet(:,4,:) and matAllSubtrees</p><pre class="codeinput">    <span class="comment">% the ids of nodes that refer to branch-points, not leafs, should be</span>
+    <span class="comment">% updated to the matAllSubtrees branch-point ids (stored in column 4 of</span>
+    <span class="comment">% the corresponding tree).</span>
+
+    <span class="comment">% we might be able to matrix/process this via subindexing</span>
+    <span class="comment">% gather those T-slices to process (i.e. for which the 4th column is 0)</span>
+    matTsToProc = matTs(matIXToProc,:);
+    <span class="comment">% find non-leaf nodes</span>
+    matIX = matTsToProc(:,1:2)&gt;intLeafCount;
+    matIXToProc2 = [matIXToProc,matIXToProc];
+    <span class="comment">% find node ids for non-leaf nodes</span>
+    matSubIX = sub2ind(size(matOrigTreeLinkageSet),matTsToProc(matIX) - (intLeafCount),repmat(4,size(find(matIX))),matIXToProc2(matIX));
+    clear <span class="string">matIXToProc2</span>
+    matTsToProc(matIX) = matOrigTreeLinkageSet(matSubIX);
+
+
+    <span class="comment">% convert to indices</span>
+    matTsToProcLinkIndices = (matTsToProc(:,1) + (matTsToProc(:,2)-1)*intCurrentSubtreeID);
+
+    <span class="comment">% count all unique indices that haven't been processed yet.</span>
+    <span class="comment">% note that no value should be bigger than intCurrentSubtreeID.</span>
+    [matCountPerValue,matUniqueValues] = countNumberOfValues(matTsToProcLinkIndices);
+
+    <span class="comment">% check for all unique edges if they're already present</span>
+    [boolPresent, matCrossIX] = ismember(matUniqueValues,matAllLinkIndices(1:intCurrentSubtreeID));
+
+    <span class="comment">% for the ones that are not yet present, add them as new unique links</span>
+    <span class="comment">% in matAllSubtrees</span>
+    <span class="keyword">if</span> any(~boolPresent)
+        matNewSubtreeIDs = (intCurrentSubtreeID+1:intCurrentSubtreeID+(sum(~boolPresent)))';
+        matAllSubtrees(matNewSubtreeIDs,:) = [matNewSubtreeIDs, ind2sub2([intCurrentSubtreeID,intCurrentSubtreeID],matUniqueValues(~boolPresent)), matCountPerValue(~boolPresent)];
+
+        <span class="comment">% and update intCurrentSubtreeID and matAllLinkIndices</span>
+        intCurrentSubtreeID = matNewSubtreeIDs(end);
+        <span class="comment">% note that this line does the subindex-2-index calculation</span>
+        matAllLinkIndices(1:intCurrentSubtreeID) = (matAllSubtrees(1:intCurrentSubtreeID,2) + (matAllSubtrees(1:intCurrentSubtreeID,3)-1)*intCurrentSubtreeID);
+    <span class="keyword">end</span>
+
+
+    <span class="comment">% for the ones that are present already in matAllSubtrees, add their</span>
+    <span class="comment">% counts in matAllSubtrees</span>
+    <span class="keyword">if</span> any(boolPresent)
+        matAllSubtrees(matCrossIX(boolPresent),4) = matAllSubtrees(matCrossIX(boolPresent),4) + matCountPerValue(boolPresent);
+    <span class="keyword">end</span>
+
+    <span class="comment">% and put back the corresponding matAllSubtrees indices in the subtree-slice,</span>
+    <span class="comment">% and subsequently in matOrigTreeLinkageSet.</span>
+    matTsToProcLinkIndices = (matTsToProc(:,1) + (matTsToProc(:,2)-1)*intCurrentSubtreeID);
+    [boolPresent, matCrossIX] = ismember(matTsToProcLinkIndices,matAllLinkIndices(1:intCurrentSubtreeID));
+    <span class="keyword">if</span> ~all(boolPresent)
+        error(<span class="string">'strange, we just added all the missing links so everything should be here!'</span>)
+    <span class="keyword">end</span>
+    matOrigTreeLinkageSet(i,4,matIXToProc) = matCrossIX;
+
+    <span class="comment">% done!</span>
+    <span class="comment">% fprintf('%s: \t %d unique subtrees gathered\n',mfilename,intCurrentSubtreeID)</span>
+
+<span class="keyword">end</span>
+
+<span class="comment">% remove empty rows resulting from memory preallocation</span>
+matAllSubtrees(all(matAllSubtrees==0,2),:) = [];
+
+<span class="comment">% some sanity check before finishing.</span>
+<span class="keyword">if</span> any(matAllSubtrees(:,4)&gt;intBootstrapCount)
+    error(<span class="string">'some EDGES occur more times than there are bootstraps... this isn''t possible!'</span>)
+<span class="keyword">end</span>
+
+<span class="comment">% normalize exact subtree score to retreival rate</span>
+matAllSubtrees(:,4) = matAllSubtrees(:,4) / intBootstrapCount;
+
+<span class="comment">% we're done</span>
+
+<span class="comment">% if we're done, and we're not interested in anyy output, make it empty.</span>
+<span class="keyword">if</span> nargout==0
+    matAllSubtrees=[];
+<span class="keyword">end</span>
+
+<span class="keyword">end</span><span class="comment">% function</span>
+
+
+
+<span class="keyword">function</span> dataOut = lin(dataIn)
+<span class="comment">% Help for function lin</span>
+<span class="comment">%</span>
+<span class="comment">% linearizes any matrix or cell array into a single column vector :)</span>
+<span class="comment">%</span>
+<span class="comment">% usage:</span>
+<span class="comment">%</span>
+<span class="comment">% dataOut = lin(dataIn)</span>
+<span class="comment">%</span>
+<span class="comment">% 2010, Berend Snijder</span>
+
+    dataOut = dataIn(:);
+
+<span class="keyword">end</span>
+
+
+
+<span class="keyword">function</span> [matCountPerValue,matUniqueValues,matIX2] = countNumberOfValues(x)
+
+<span class="comment">% usage:</span>
+<span class="comment">%</span>
+<span class="comment">% [matCountPerValue,matUniqueValues,matIX2] = countNumberOfValues(x)</span>
+<span class="comment">%</span>
+<span class="comment">% Is a quick way to count how often each unique value occurs. The</span>
+<span class="comment">% unique values and their cross indices are returned as by "unique()"</span>
+<span class="comment">%</span>
+<span class="comment">%</span>
+<span class="comment">% example:</span>
+<span class="comment">%</span>
+<span class="comment">% [matCountPerValue,matUniqueValues,matIX2] = countNumberOfValues(x)</span>
+<span class="comment">%</span>
+<span class="comment">% bar(matUniqueValues,matCountPerValue)</span>
+<span class="comment">%</span>
+<span class="comment">% 2009, Berend Snijder</span>
+
+    [x,matSortIX] = sort(x);
+
+    <span class="keyword">if</span> nargout==3
+        [matUniqueValues,matIX,matIX2] = unique(x,<span class="string">'last'</span>);
+        <span class="comment">% sort back matIX2 so that it corresponds to the original unsorted</span>
+        <span class="comment">% "x"</span>
+        [~,matSortIX] = sort(matSortIX);
+        matIX2 = matIX2(matSortIX);
+    <span class="keyword">else</span>
+        [matUniqueValues,matIX] = unique(x,<span class="string">'last'</span>);
+    <span class="keyword">end</span>
+
+    matCountPerValue = NaN(size(matUniqueValues));
+
+    matPreviousIX = 0;
+    <span class="keyword">for</span> iValue = 1:size(matUniqueValues,1)
+        matCountPerValue(iValue) = matIX(iValue)-matPreviousIX;
+        matPreviousIX = matIX(iValue);
+    <span class="keyword">end</span>
+
+
+<span class="keyword">end</span>
+
+
+
+<span class="keyword">function</span> matCompleteDataBinIX = ind2sub2(matBinDimensions,matSubIndices) <span class="comment">%#ok&lt;STOUT,INUSD&gt;</span>
+    <span class="comment">% Wrapper for ind2sub, so we can handle different cases dinamically,</span>
+    <span class="comment">% and ouput the output in a matrix rather than in independent</span>
+    <span class="comment">% variables. (Could also be done by catching output in a cell array?)</span>
+
+    <span class="comment">% Berend Snijder</span>
+
+    str2exec = <span class="string">'[I1'</span>;
+    <span class="keyword">for</span> i = 2:size(matBinDimensions,2)
+        str2exec = [str2exec,sprintf(<span class="string">',I%d'</span>,i)]; <span class="comment">%#ok&lt;AGROW&gt;</span>
+    <span class="keyword">end</span>
+    str2exec = [str2exec,<span class="string">']'</span>];
+
+    eval(sprintf(<span class="string">'%s = ind2sub(matBinDimensions,matSubIndices);'</span>,str2exec));
+    eval(sprintf(<span class="string">'matCompleteDataBinIX = %s;'</span>,str2exec));
+
+<span class="keyword">end</span>
+
+
+<span class="keyword">function</span> drawBestTree(matAllSubtrees, matOrigTreeLinkageSet,datalabels4bootstrap)
+
+    <span class="comment">% count number of bootstraps.</span>
+    intBootstrapCount = size(matOrigTreeLinkageSet,3);
+
+    <span class="comment">% calculate the sum subtree score for each tree</span>
+    matSumSubtreeFrequencyPerTree = NaN(size(matOrigTreeLinkageSet,3),1);
+    <span class="keyword">for</span> iTree = 1:size(matOrigTreeLinkageSet,3)
+        <span class="comment">% sum subtree scores</span>
+        matSumSubtreeFrequencyPerTree(iTree) = sum(matAllSubtrees(matOrigTreeLinkageSet(:,4,iTree),4));
+    <span class="keyword">end</span>
+
+    <span class="comment">% find the tree with the highest sum of subtree frequencies</span>
+    [intTreeScore,intMaxIX] = max(matSumSubtreeFrequencyPerTree);
+
+    <span class="comment">% store best tree for output</span>
+    matBestTree = matOrigTreeLinkageSet(:,1:3,intMaxIX);
+
+    <span class="comment">% create a phytree object from linkage, present in the Matlab</span>
+    <span class="comment">% Bioinformatics Toolbox. Note that only the first three columns should be</span>
+    <span class="comment">% passed, as the fourth column contains the subtree-id for each</span>
+    <span class="comment">% branchpoint.</span>
+    <span class="keyword">if</span> nargin==3
+        objPhyTree = phytree(matBestTree,datalabels4bootstrap);
+    <span class="keyword">else</span>
+        objPhyTree = phytree(matBestTree);
+    <span class="keyword">end</span>
+
+    <span class="comment">% plot the tree</span>
+    h = plot(objPhyTree,<span class="string">'Type'</span>,<span class="string">'square'</span>);
+    <span class="comment">% set(gca,'YMinorTick','off','YTick',[])</span>
+    drawnow
+
+    <span class="keyword">for</span> iBranch = 1:length(h.branchNodeLabels)
+
+        <span class="comment">% get the handle to the current branch</span>
+        hBranch = h.branchNodeLabels(iBranch);
+
+        <span class="comment">% calculate absolute and percentage occurence of current branch</span>
+        intSubtreePercent = 100*matAllSubtrees(matOrigTreeLinkageSet(iBranch,4,intMaxIX),4);
+        intSubtreeCount = round(intBootstrapCount*matAllSubtrees(matOrigTreeLinkageSet(iBranch,4,intMaxIX),4));
+
+        <span class="comment">% add text-label to each branch, different for root than for other branches</span>
+        <span class="keyword">if</span> iBranch == length(h.branchNodeLabels)
+            <span class="comment">% root</span>
+            set(hBranch,<span class="string">'Visible'</span>,<span class="string">'on'</span>,<span class="string">'String'</span>,sprintf(<span class="string">'\\color[rgb]{0 0 0.75}subtree %% and absolute count (%.1g%% and %d times for root)'</span>,intSubtreePercent,intSubtreeCount), <span class="keyword">...</span>
+                <span class="string">'FontSize'</span>,8,<span class="keyword">...</span>
+                <span class="string">'Interpreter'</span>,<span class="string">'TeX'</span>,<span class="keyword">...</span>
+                <span class="string">'HorizontalAlignment'</span>,<span class="string">'center'</span>,<span class="keyword">...</span>
+                <span class="string">'VerticalAlignment'</span>,<span class="string">'bottom'</span>,<span class="keyword">...</span>
+                <span class="string">'Rotation'</span>,90)
+        <span class="keyword">else</span>
+            <span class="comment">% branch</span>
+            <span class="keyword">if</span> intSubtreePercent &lt; 1
+                set(hBranch,<span class="string">'Visible'</span>,<span class="string">'on'</span>,<span class="string">'String'</span>,sprintf(<span class="string">'\\color[rgb]{0 0 0.75}%.1g%% (%d)'</span>,intSubtreePercent,intSubtreeCount),<span class="keyword">...</span>
+                    <span class="string">'FontSize'</span>,7,<span class="keyword">...</span>
+                    <span class="string">'Interpreter'</span>,<span class="string">'TeX'</span>)
+            <span class="keyword">else</span>
+                set(hBranch,<span class="string">'Visible'</span>,<span class="string">'on'</span>,<span class="string">'String'</span>,sprintf(<span class="string">'\\color[rgb]{0 0 0.75}%.1f%% (%d)'</span>,intSubtreePercent,intSubtreeCount),<span class="keyword">...</span>
+                    <span class="string">'FontSize'</span>,7,<span class="keyword">...</span>
+                    <span class="string">'Interpreter'</span>,<span class="string">'TeX'</span>)
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+    <span class="keyword">end</span>
+
+
+    title(sprintf(<span class="string">'Tree with highest sum of subtree frequencies (%.1f) in %d bootstrap trees.'</span>,intTreeScore,intBootstrapCount))
+
+    hold <span class="string">off</span>
+
+    drawnow
+
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Warning: Running in demo mode using the 'fisheriris' dataset 
+doing fast correlation method
+bootcluster: starting 1000000 bootstrap runs
+bootcluster: processing ratio 0.5 (in 41.8s)
+bootcluster: processing ratio 0.6 (in 40.7s)
+bootcluster: processing ratio 0.7 (in 40.9s)
+bootcluster: processing ratio 0.8 (in 39.7s)
+bootcluster: processing ratio 0.9 (in 40.6s)
+bootcluster: processing ratio 1 (in 39.6s)
+bootcluster: processing ratio 1.1 (in 39.2s)
+bootcluster: processing ratio 1.2 (in 39.5s)
+bootcluster: processing ratio 1.3 (in 38.8s)
+bootcluster: processing ratio 1.4 (in 38.8s)
+bootcluster: starting subtree analysis on 1000000 bootstrapped trees, each with 150 leafs
+bootcluster: rotating branches of all trees
+bootcluster: analyzing all branch points that connect two leaf sets
+bootcluster: 	 found 3015 unique branches connecting two leaf sets, making up 29.9% of all branches
+bootcluster: starting higher-order subtree analysis
+
+ans =
+
+    1.0000   18.0000         0
+   10.0000   35.0000         0
+  129.0000  133.0000         0
+  102.0000  143.0000         0
+   13.0000   46.0000    0.0000
+  125.0000  145.0000    0.0000
+   27.0000  152.0000    0.0001
+  104.0000  135.0000    0.0009
+   24.0000   41.0000    0.0013
+  124.0000  144.0000    0.0017
+   73.0000  109.0000    0.0021
+   26.0000  151.0000    0.0027
+   91.0000   99.0000    0.0034
+   70.0000   92.0000    0.0039
+  103.0000  121.0000    0.0044
+   94.0000  154.0000    0.0045
+    8.0000   20.0000    0.0059
+   53.0000   87.0000    0.0061
+   22.0000   33.0000    0.0062
+  112.0000  156.0000    0.0064
+   54.0000   79.0000    0.0065
+   55.0000  106.0000    0.0067
+   40.0000  162.0000    0.0070
+  146.0000  165.0000    0.0075
+   30.0000   48.0000    0.0076
+    5.0000  167.0000    0.0145
+   78.0000  126.0000    0.0150
+   80.0000  148.0000    0.0155
+  138.0000  158.0000    0.0160
+   81.0000  105.0000    0.0162
+   16.0000   17.0000    0.0162
+    2.0000   50.0000    0.0164
+  131.0000  172.0000    0.0177
+   93.0000  134.0000    0.0187
+   45.0000  155.0000    0.0228
+   98.0000  108.0000    0.0236
+   74.0000  120.0000    0.0242
+   34.0000   49.0000    0.0257
+   11.0000   29.0000    0.0277
+  139.0000  163.0000    0.0282
+   72.0000  174.0000    0.0283
+   64.0000   68.0000    0.0291
+   12.0000   31.0000    0.0312
+   95.0000  166.0000    0.0320
+   47.0000  157.0000    0.0328
+   84.0000  116.0000    0.0333
+   61.0000   90.0000    0.0342
+   83.0000  184.0000    0.0350
+  159.0000  182.0000    0.0365
+   25.0000  175.0000    0.0366
+  113.0000  119.0000    0.0381
+  147.0000  160.0000    0.0388
+  164.0000  180.0000    0.0390
+   28.0000  188.0000    0.0417
+   88.0000  111.0000    0.0423
+  169.0000  176.0000    0.0427
+   44.0000  195.0000    0.0444
+   69.0000  141.0000    0.0449
+  181.0000  189.0000    0.0451
+   62.0000  100.0000    0.0474
+    3.0000   23.0000    0.0488
+  114.0000  128.0000    0.0492
+   14.0000   39.0000    0.0495
+   82.0000  192.0000    0.0500
+  130.0000  177.0000    0.0525
+   38.0000  185.0000    0.0526
+  127.0000  170.0000    0.0536
+   65.0000  122.0000    0.0588
+   76.0000  168.0000    0.0618
+  179.0000  196.0000    0.0623
+   59.0000   75.0000    0.0623
+   36.0000  204.0000    0.0650
+  161.0000  202.0000    0.0650
+  171.0000  203.0000    0.0652
+   19.0000   32.0000    0.0655
+    6.0000  173.0000    0.0657
+  123.0000  191.0000    0.0711
+  117.0000  198.0000    0.0712
+  186.0000  201.0000    0.0719
+  140.0000  215.0000    0.0758
+  178.0000  208.0000    0.0818
+    7.0000  200.0000    0.0828
+   58.0000   97.0000    0.0877
+  153.0000  214.0000    0.0929
+   56.0000  115.0000    0.0951
+   15.0000   37.0000    0.0952
+  206.0000  207.0000    0.1025
+  199.0000  226.0000    0.1080
+  193.0000  211.0000    0.1225
+  209.0000  222.0000    0.1247
+    4.0000   43.0000    0.1253
+  217.0000  228.0000    0.1257
+   63.0000  231.0000    0.1291
+   52.0000   66.0000    0.1295
+   21.0000  225.0000    0.1361
+   77.0000  221.0000    0.1379
+  197.0000  220.0000    0.1387
+   51.0000  110.0000    0.1403
+  150.0000  218.0000    0.1504
+  183.0000  227.0000    0.1635
+  187.0000  234.0000    0.1767
+  216.0000  237.0000    0.1776
+  223.0000  243.0000    0.1802
+  210.0000  212.0000    0.1858
+  224.0000  251.0000    0.2284
+   42.0000  233.0000    0.2375
+  190.0000  194.0000    0.2411
+  213.0000  241.0000    0.2509
+  236.0000  245.0000    0.2522
+  229.0000  250.0000    0.2548
+  238.0000  240.0000    0.2661
+  136.0000  246.0000    0.2694
+   60.0000  107.0000    0.2915
+  232.0000  239.0000    0.2955
+   71.0000  137.0000    0.3052
+  242.0000  253.0000    0.3680
+  230.0000  262.0000    0.3781
+  252.0000  261.0000    0.3944
+  235.0000  257.0000    0.4042
+  205.0000  260.0000    0.4323
+  247.0000  254.0000    0.4504
+    9.0000   86.0000    0.5266
+  258.0000  264.0000    0.5267
+  249.0000  256.0000    0.5691
+  101.0000  263.0000    0.6137
+  255.0000  266.0000    0.6325
+  142.0000  219.0000    0.6691
+  267.0000  270.0000    0.7119
+  244.0000  248.0000    0.7158
+  269.0000  271.0000    0.8005
+  259.0000  268.0000    0.8274
+  273.0000  281.0000    0.9931
+   85.0000  265.0000    1.0145
+   96.0000  275.0000    1.2649
+  276.0000  280.0000    1.3432
+   67.0000   89.0000    1.4420
+  277.0000  278.0000    1.6689
+  118.0000  132.0000    1.7525
+  272.0000  282.0000    1.8366
+  285.0000  287.0000    2.0848
+  274.0000  284.0000    2.2141
+  283.0000  286.0000    2.7515
+   57.0000  289.0000    3.3837
+  290.0000  291.0000    3.7591
+  279.0000  288.0000    3.8282
+  149.0000  292.0000    4.9547
+  294.0000  295.0000    5.9401
+  296.0000  297.0000    9.6774
+  293.0000  298.0000   21.3594
+
+</pre><img vspace="5" hspace="5" src="bootcluster_01.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2014a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+function [matBestTree, h, matAllSubtrees, matTreeLinkageSet, matLeafOrderPerm] = bootcluster(matInputData,cellDataLabels,intNumOfRounds,varargin)
+%BOOTCLUSTER   bootstrapped clustering of data.
+%   [matBestTree] = bootcluster(matInputData) calculates the tree structure
+%   that has the highest sum of bootstrap scores over each bifurcation
+%   point. Bootstrapping is performed by subsampling to oversampling from
+%   the columns of the input data matrix, with a sampling ratio of
+%   0.5:0.1:1.4 (slightly more subsampling than oversampling).
+%
+%   matInputData will be clustered over the rows. If the number of rows is
+%   equal to the number of columns, the final visualization will apply the
+%   best clustering to both dimensions.
+%
+%   [matBestTree,h] = bootcluster(matInputData) 
+%   also returns the figure handle h.
+%
+%   [~, ~, matAllSubtrees] = bootcluster(matInputData,cellDataLabels,intNumOfRounds,varargin)
+%   also returns the 3D stack of generated binary trees (as output by
+%   the linkage function)
+%
+%   [~, ~, ~, matTreeLinkageSet] = bootcluster(matInputData,cellDataLabels,intNumOfRounds,varargin)
+%   also returns the internal data structer that is used to count the
+%   occurence of each subtree in the set of trees of matAllSubtrees.
+%
+%   [~, ~, ~, ~, matLeafOrderPerm] = bootcluster(matInputData,cellDataLabels,intNumOfRounds,varargin)
+%   also returns that permutation required to reproduce the final
+%   clustering.
+%
+%   Note that this code uses parfor to make use of parallel computing.
+%   Search for the word 'parfor' and replace with 'for' if you do not want
+%   to use parallel processing.
+%
+%   Varying the number for the input parameter intNumOfRounds will greatly
+%   affect runtime but also the output. Consider lowering (10000) for
+%   faster runtimes on larger datasets, and increasing (1000000) for
+%   more robust clustering results.
+%
+%   The code is similar to described in
+%   http://ch.mathworks.com/help/bioinfo/examples/bootstrapping-phylogenetic-trees.html
+%   but differs in that it does not just count the number of equal clusters
+%   but exactly equal subtrees, and returns the best tree based on the sum
+%   of subtree bootstrap scores.    
+% 
+%   Example BOOTCLUSTER usage on the MATLAB fisheriris dataset:
+%
+%       X = load('fisheriris');
+%       matData = zscore(X.meas);
+%       cellSpecies = strcat(arrayfun(@(x) {[num2str(x),'_']},1:size(X.species,1))',X.species);
+%
+%       [matBestTree, h, matAllSubtrees, matTreeLinkageSet, matLeafOrderPerm] = bootcluster(matData,cellSpecies,100000);
+% 
+%       % to plot just the best tree:
+%       view(phytree(matBestTree,cellSpecies))
+% 
+%       % to compare this to non-bootstrapped clustering
+%       clustergram(matData,'RowLabels',X.species,'cluster',1)
+%
+%   Note that this code has several undocumented features. I would recommend
+%   reading through the source code prior to usage.
+%
+%   For more information to this code also read the help and information on
+%   its included subfunctions.
+%
+%
+%
+%   This code was first used and published in the following publication.
+%   Please cite this publication if you use this code in your research.
+%
+%   Single-cell analysis of population context advances RNAi screening at
+%   multiple levels. 
+%   http://msb.embopress.org/content/8/1/579.long
+% 
+%   Snijder B, Sacher R, Rämö P, Liberali P, Mench K, Wolfrum N, Burleigh
+%   L, Scott CC, Verheije MH, Mercer J, Moese S, Heger T, Theusner K,
+%   Jurgeit A, Lamparter D, Balistreri G, Schelhaas M, De Haan CA,
+%   Marjomäki V, Hyypiä T, Rottier PJ, Sodeik B, Marsh M, Gruenberg J,
+%   Amara A, Greber U, Helenius A, Pelkmans L.    
+%
+%   Mol Syst Biol. 2012 Apr 24;8:579. doi: 10.1038/msb.2012.9.
+%
+%   See also https://github.com/pelkmanslab and
+%   http://msb.embopress.org/content/8/1/579.long and
+%   http://ch.mathworks.com/help/bioinfo/examples/bootstrapping-phylogenetic-trees.html.
+%
+%   Copyright 2015 Berend Snijder - bsnijder@gmail.com
+
+
+
+    matLeafOrderPerm = [];
+
+    if nargin==0
+        % if the number of input arguments is 0, run in demo mode.
+
+        warning('bs:Bla','Running in demo mode using the ''fisheriris'' dataset')
+        X = load('fisheriris');
+        matInputData = zscore(X.meas);
+        cellDataLabels = strcat(arrayfun(@(x) {[num2str(x),'_']},1:size(X.species,1))',X.species);
+
+    elseif nargin==1
+
+        fprintf('%s: no data labels given\n',mfilename)
+        cellDataLabels = num2strcell(1:size(matInputData,1));
+    elseif length(cellDataLabels) ~= size(matInputData,1)
+
+        fprintf('%s: data label size does not match data size. Using default\n',mfilename)
+        cellDataLabels = num2strcell(1:size(matInputData,1));
+    end
+
+    % how many trees to generate
+    if nargin<3
+        intNumOfRounds = 1000000;
+    end
+
+    % bootstrap sample sizes (ratio of fraction) with resampling, loosly
+    % modelled after what is done in the R-package pvclust.
+    matRs = [0.5 0.6 0.7 0.8 0.9 1 1.1 1.2 1.3 1.4];
+
+    % get data dimensions
+    [nRow,nCol] = size(matInputData);
+
+    % check if there are NaNs present in the data. We are nan-robust, but it's
+    % much slower, so preferably avoid NaNs if possible.
+    if any(isnan(matInputData(:)))
+        fprintf('%s: found %d NaNs in data, using slower nan-robust correlation distance\n',mfilename,sum(isnan(matInputData(:))))
+        boolNaNsPresent = true;
+    else
+        boolNaNsPresent = false;
+    end
+
+    boolUserFunc = false;
+    strFuncHandle = 'correlation'; %default function
+    boolCorr = true;
+    matPossibleFunctionHandle = cellfun(@(x) isa(x,'function_handle'),varargin);
+    if any(matPossibleFunctionHandle) & numel(matPossibleFunctionHandle)>0
+        strFuncHandle = varargin{find(matPossibleFunctionHandle,1,'first')};
+        fprintf('%s: detected user-passed function handle ''%s'', using this for distance measure\n',mfilename,func2str(strFuncHandle))
+        boolUserFunc = true;
+        boolCorr = false;
+    end
+
+    boolCorrEucl = cellfun(@(x) strcmpi(x,'pdist_corr_eucl'),varargin);
+    if boolCorrEucl
+        boolCorr = false;
+        disp('doing fast experimental correlation + euclidean method')
+    elseif boolCorr
+        disp('doing fast correlation method')    
+    end
+
+    matPossibleRGBColors = cellfun(@(x) isa(x,'double') & size(x,3)==3,varargin);
+    boolUserRGB = false;
+    if any(matPossibleRGBColors) & numel(matPossibleRGBColors)>0
+        matRGB = varargin{find(matPossibleRGBColors,1,'first')};
+        fprintf('%s: detected user-passed colormap\n',mfilename)
+        boolUserRGB = true;
+    end
+
+    % initialize the matrix containing all the tree linkages from the
+    % bootstrapping procedure
+    matTreeLinkageSet = zeros(nRow-1,3,intNumOfRounds);
+
+    fprintf('%s: starting %d bootstrap runs\n',mfilename,intNumOfRounds)
+
+    iBCounter = 0;
+    % loop over each bootstrap sample size
+    for r = matRs
+        tic;
+        fprintf('%s: processing ratio %g',mfilename,r)
+
+        % parallel loop over each bootstrap (where the total number of
+        % bootstraps is divided by the number of bootstrap sample sizes)
+        parfor iBoot = 1:round(intNumOfRounds / length(matRs))
+
+            % randomly sample with replacement from all columns, according to
+            % the current bootstrap sample size
+            data = single(matInputData(:,randsample(nCol,floor(nCol*r),true))); %#ok<PFBNS>
+
+            % calculate correlation distance matrix, NaN-robust if NaNs are
+            % present
+            if boolNaNsPresent
+                distancematrix = squareform_bs(1-corr(data','rows','pairwise'));
+            else
+                if boolCorrEucl
+                    % I noticed pdist_corr_eucl does not do sqrt of euclidean
+                    % distance...
+                    distancematrix = abs(bsxfun(@plus,dot(data',data',1)',dot(data',data',1))-2*(data*data'));
+                    distancematrix = (distancematrix ./ max(distancematrix(:)))  + ((1 - corr(data'))/2);
+                    distancematrix(isnan(distancematrix)) = 2;                
+                elseif boolCorr
+                    distancematrix = 1-corr(data'); 
+                else
+                    distancematrix = pdist(data,strFuncHandle);
+                end
+            end
+
+            % set NaN-distance to max distance of 2.
+            distancematrix(isnan(distancematrix)) = 2;
+
+            % calculate linkage
+            t = linkage(distancematrix,'average');
+
+            if any(isnan(t(:,3)))
+                keyboard
+            end
+
+            % store linkage for current bootstrap in matTreeLinkageSet
+            matTreeLinkageSet(:,:,iBCounter+iBoot) = t;
+
+        end 
+
+        % increment counter (outside of parfor loop)
+        iBCounter = iBCounter + round(intNumOfRounds / length(matRs));
+        fprintf(' (in %.1fs)\n',toc)
+    end
+
+
+    % count how often each identical subtree occurs in the set of linkages
+    [matAllSubtrees, matTreeLinkageSet] = analyze_subtrees_in_linkages(matTreeLinkageSet);
+
+    % calculate the sum subtree score for each node of the entire tree
+    matSumSubtreeFrequencyPerTree = NaN(size(matTreeLinkageSet,3),1);
+
+    for iTree = 1:size(matTreeLinkageSet,3)
+
+        % sum edge scores
+        matSumSubtreeFrequencyPerTree(iTree) = sum(matAllSubtrees(matTreeLinkageSet(:,4,iTree),4));
+
+    end
+
+
+    % find the tree with the highest sum of subtree frequencies
+    [~,intMaxIX] = max(matSumSubtreeFrequencyPerTree);
+
+    % store best tree for output
+    matBestTree = matTreeLinkageSet(:,1:3,intMaxIX);
+
+
+    % create a phytree object from linkage, present in the Matlab
+    % Bioinformatics Toolbox. Note that only the first three columns should be
+    % passed, as the fourth column contains the subtree-id for each
+    % branchpoint. 
+    objPhyTree = phytree(matBestTree,cellDataLabels);
+
+    % plot the tree
+    h = plot(objPhyTree,'Type','square');
+    drawnow
+
+    for iBranch = 1:length(h.branchNodeLabels)
+
+        % get the handle to the current branch
+        hBranch = h.branchNodeLabels(iBranch);
+
+        % calculate absolute and percentage occurence of current branch
+        intSubtreePercent = 100*matAllSubtrees(matTreeLinkageSet(iBranch,4,intMaxIX),4);
+        intSubtreeCount = round(intNumOfRounds*matAllSubtrees(matTreeLinkageSet(iBranch,4,intMaxIX),4));
+
+        % add text-label to each branch, different for root than for other branches
+        if iBranch == length(h.branchNodeLabels)
+            % root
+            set(hBranch,'Visible','on','String',sprintf('\\color[rgb]{0 0 0.75}subtree %% and absolute count (%.0f%% and %d times for root)',intSubtreePercent,intSubtreeCount), ...
+                'FontSize',8,...
+                'Interpreter','TeX',...
+                'HorizontalAlignment','center',...
+                'VerticalAlignment','bottom',...
+                'Rotation',90)
+        else
+            % branch
+            set(hBranch,'Visible','on','String',sprintf('\\color[rgb]{0 0 0.75}%.0f%% (%d)',intSubtreePercent,intSubtreeCount),...
+                'FontSize',7,...
+                'Interpreter','TeX')
+        end
+
+    end
+
+
+
+    if ~any(cellfun(@(x) strcmpi(x,'noheat'),varargin))
+
+    % experimental, let's add a heatmap that has the ordered data in the right
+    % order next to the tree.
+
+    % shrink the width of the dendogram
+    matDendogramPosition = get(h.axes,'Position');
+    matDendogramPosition = matDendogramPosition.*[1,1,.3,1];
+    set(h.axes,'Position',matDendogramPosition);
+    % remove box and background color
+    set(h.axes,'Box','off')
+    set(h.axes,'Color','none')
+    set(h.axes,'Visible','off')
+
+
+
+    % the reordering of the data rows is dependent on the leaf-order of the
+    % dendogram
+    [~,matLeafOrderPerm] = ismember(get(objPhyTree,'LeafNames'),cellDataLabels);
+
+    % get leaf positions
+    set(h.terminalNodeLabels,'Visible','off')
+    % matLeafPositions = get(h.leafNodeLabels,'Position');
+
+    % calculate heatmap axis position
+    % matHeatMapAxisPosition = [matDendogramPosition(1) + matDendogramPosition(3),matDendogramPosition(2),1-(matDendogramPosition(1) + matDendogramPosition(3)+0.05),matDendogramPosition(4)];
+
+    matHeatMapAxisPosition = matDendogramPosition;
+    % left start: start after dendogram (i.e. offset + width)
+    matHeatMapAxisPosition(1) = matHeatMapAxisPosition(1) + matHeatMapAxisPosition(3);
+    % width: entire figure width minus width of dendogram (see start), plus
+    % margin for labels.
+    matHeatMapAxisPosition(3) = 1 - (matHeatMapAxisPosition(1) + 0.1);
+    % bottom: a bit higher than dendogram.
+    matHeatMapAxisPosition(2) = matHeatMapAxisPosition(2) * 1.6;
+    % height: less than dendogram
+    matHeatMapAxisPosition(4) = matHeatMapAxisPosition(4) - (matDendogramPosition(2)*1.2);
+
+    % %%% experimental column ordering...
+    % % calculate column ordering from  a single clustering...
+    % Y1 = pdist(data4bootstrap',@pdist_corr);
+    % Z1 = linkage(Y1,'average');
+    % hDend = figure();
+    % [~,~,matColPerm] = dendrogram(Z1)
+    % close(hDend)
+    % %%% end experiment
+
+
+    % create new axis and draw heatmap in right order (according to leafs)
+    hold on
+    hMap = axes('Position',matHeatMapAxisPosition);
+    % hMap = axes();
+    % colormap(flipud(smoothcolormap(redbluecmap)))
+    colormap(flipud(smoothcolormap(redgreencmap)))
+    % matZscores = nanzscore(data4bootstrap')';
+    % if we're dealing with a square matrix, order both rows and columns
+    % according to clustering. otherwise just the rows.
+
+    if boolUserRGB
+        % user supplied colors
+        imagesc(matRGB(matLeafOrderPerm,matLeafOrderPerm,:));
+    elseif size(matInputData,1)==size(matInputData,2)
+        % for colors, assume distance matrix: [-1, 1]
+        imagesc(matInputData(matLeafOrderPerm,matLeafOrderPerm),[-1,1])
+    else
+    %     imagesc(data4bootstrap(matLeafOrderPerm,:),[-1.5,1.5])
+        imagesc(matInputData(matLeafOrderPerm,:),[-5 5])
+    end
+    set(hMap, ...
+        'Box','off',...
+        'YTick',[1:length(cellDataLabels)],...
+        'XTick',[],...
+        'YAxisLocation','right',...
+        'YTickLabel',cellDataLabels(matLeafOrderPerm),...
+        'TickDir','out',...
+        'FontSize',8 ...
+        );
+
+    end
+
+
+    title(sprintf('Tree with highest sum of subtree frequencies over %d bootstraps.',intNumOfRounds))
+
+    hold off
+
+    drawnow
+
+end% and we are done :)
+
+
+function c = num2strcell(n, format)
+    % num2strcell Convert vector of numbers to cell array of strings
+    % function c = num2strcell(n, format)
+    %
+    % If format is omitted, we use
+    % c{i} = sprintf('%d', n(i))
+
+    if nargin < 2, format = '%d'; end
+
+    N = numel(n);
+    c = cell(size(n));
+    for i=1:N
+      c{i} = sprintf(format, n(i));
+    end
+
+end
+
+
+
+
+function [matAllSubtrees, matOrigTreeLinkageSet] = analyze_subtrees_in_linkages(matTreeLinkageSet)
+% function analyze_subtrees_in_linkages(matTreeLinkageSet)
+
+% Help for analyze_subtrees_in_linkages
+%
+% Usage:
+%
+% [matAllSubtrees, matOrigTreeLinkageSet] = analyze_subtrees_in_linkages(matTreeLinkageSet)
+%
+%
+% Input: matTreeLinkageSet is a series of linkages (agglomerative
+% hierarchical cluster trees) as ouptut by the matlab function "linkage".
+% The linkages should be concatenated in the third dimension, and contain
+% the same leaf nodes. Typically, they are bootstrapped trees from the same
+% data. matTreeLinkageSet size is [m, 3, n], where m is the number of
+% leafs-1, and n is the number of bootstraps.
+%
+% output: matAllSubtrees 
+% matAllSubtrees is a matrix similar to output of linkage, except that the
+% columns have the following values, which result from aggregating all
+% trees in matTreeLinkageSet:   
+%
+% SUBTREE-ID | SUBTREE-ID-NODE1 | SUBTREE-ID-NODE2 | SUBTREE-COUNT
+%
+% 
+% output: matOrigTreeLinkageSet
+% matOrigTreeLinkageSet contains the original input matTreeLinkageSet with
+% column 4 containing the new index, or SUBTREE-ID of each branch,
+% corresponding to the SUBTREE-ID in matAllSubtrees. 
+%
+% Looking up the bootstrap frequency of each subtree-id in the fourth
+% column of matTreeLinkageSet allows one to calculate total scores per
+% tree.  
+%
+% Berend Snijder, 2011.
+
+
+% count number of leafs.
+intLeafCount = size(matTreeLinkageSet,1)+1;
+
+% count number of bootstraps.
+intBootstrapCount = size(matTreeLinkageSet,3);
+
+% report
+fprintf('%s: starting subtree analysis on %d bootstrapped trees, each with %d leafs\n',mfilename,intBootstrapCount,intLeafCount)
+
+% Sort to always have lowest number in first column and higher number in
+% second column, which equals rotating branches. Since we are returning
+% this, it means we are not preserving tree-structures perfectly between
+% input and output, but i don't see how that will hurt anybody now. (we
+% could store sorting and return to original sorting at end of script.)
+fprintf('%s: rotating branches of all trees\n',mfilename)
+matTreeLinkageSet(:,[1,2]) = sort(matTreeLinkageSet(:,[1,2]),2);
+
+% keep copy of original tree structure, with added fourth column of zeros
+% to put in the subtree-ids.
+matOrigTreeLinkageSet = [matTreeLinkageSet(:,1:3,:),zeros(intLeafCount-1,1,intBootstrapCount)];
+
+% discard distance data from the trees set
+matTreeLinkageSet(:,3:end,:) = [];
+
+
+%%%
+% we can first get a listing of all unique linkages and leaf-sets that
+% connect assay-pairs (leafs) directly. for these connections we can do the
+% fast sorted-unique-last trick which get's all unique assay-links and their 
+% counts pretty fast. this takes care of about half of all branches in the
+% entire dataset and should speed up the algorithm considerably.
+
+% report
+fprintf('%s: analyzing all branch points that connect two leaf sets\n',mfilename)
+
+% let's reshape matTreeLinkageSet such that all bootstrapped trees are
+% concatenated below eachother, i.e. final size equals:
+% size = [(intLeafCount-1) * intBootstrapCount, 2]  
+matTreeLinkageSet=matTreeLinkageSet(:,:);
+matTreeLinkageSet=[lin(matTreeLinkageSet(:,1:2:end-1)),lin(matTreeLinkageSet(:,2:2:end))];
+
+% a quick sanity check, note that this is always passed
+if not(...
+        isequal(matTreeLinkageSet(1:(intLeafCount-1),:),matOrigTreeLinkageSet(:,1:2,1)) && ...
+        isequal(matTreeLinkageSet(end-(intLeafCount-2):end,:),matOrigTreeLinkageSet(:,1:2,end)))
+    error('hm, reformatting of data failed')
+end
+
+
+% here's a neat trick, since for the assay-connections at least the edges
+% can be considered sub-indices of a [(intLeafCount*2)-1 * (intLeafCount*2)-1] 
+% size matrix, therefore we can process the indices as unique identifiers
+% for the edges (subindices) at least for those edges that directly connect
+% leafs.
+
+% this is the dimension of the matrix via which we do the subindex REPLACE_WITH_DASH_DASH>
+% index reformatting.
+matMatrixSize = [(intLeafCount*2)-1,(intLeafCount*2)-1];
+% now do the sub-index to index remapping.
+matEdgeSubIX = sub2ind(matMatrixSize,matTreeLinkageSet(:,1),matTreeLinkageSet(:,2));
+
+% now get the branches that connect two assays directly, and get the unique
+% mapping for the indices for those branches.
+matTwoLeafsBranchIX = logical(matTreeLinkageSet(:,1)<=intLeafCount & matTreeLinkageSet(:,2)<=intLeafCount);
+
+% count how often each unique branch occurs
+[matCountPerValue,matUniqueValues,matIX2] = countNumberOfValues(matEdgeSubIX(matTwoLeafsBranchIX));
+
+% report
+fprintf('%s: \t found %d unique branches connecting two leaf sets, making up %.1f%% of all branches\n',...
+        mfilename,...
+        length(matCountPerValue),...
+        (100*(sum(matTwoLeafsBranchIX)/((intLeafCount-1)*intBootstrapCount)))...
+    )
+
+% put the subtree-ids of branches connecting two leafs in the fourth column
+% of the output matOrigTreeLinkageSet. 
+% Note that the subtree-ids must be offset with intLeafCount, as
+% subtree-ids 1 to intLeafCount are reserved for leafs. 
+matTreeLinkageSet2 = zeros([intLeafCount-1,1,intBootstrapCount]);
+matTreeLinkageSet2(matTwoLeafsBranchIX) = matIX2+intLeafCount;
+matOrigTreeLinkageSet(:,4,:) = matTreeLinkageSet2;
+% we can get rid of some large variables now
+clear matTwoLeafsBranchIX matTreeLinkageSet2 matTreeLinkageSet matEdgeSubIX matTwoLeafsBranchIX
+
+% Start filling in our collection of subtrees in matAllSubtrees
+% Note again, that the first link-id should begin after intLeafCount.
+% matAllSubtrees = [ SUBTREE-ID |  NODE-1  |  NODE-2  |  OCCURENCE-OF-SUBTREE ]
+
+% fill in bogus 'ones' for the node-ids and occurence of subtrees
+matAllSubtrees = [(1:intLeafCount)',ones(intLeafCount,3)];
+% append the subtree data for the branches linking two leafs
+matAllSubtrees = [matAllSubtrees;[(1:size(matUniqueValues,1))'+intLeafCount,ind2sub2(matMatrixSize,matUniqueValues),matCountPerValue]];
+clear matUniqueValues matCountPerValue matMatrixSize
+
+%%%
+% Now we start processing all higher-order subtrees. 
+% To keep track of all possible subtrees, I mark them in an growing 2D
+% connection matrix, growing as we process higher order subtrees from the
+% set of linkages. We keep track of each subtree by their subtree-id, which
+% is the subindex of its connection in the 2D connection matrix. As the
+% connection matrix is growing, we need to recalculate the subtree-indices.
+
+% set current subtree-id
+intCurrentSubtreeID = max(matAllSubtrees(:,1));
+
+% pre-initialize matAllLinkIndices.
+%
+% matAllLinkIndices is a vector that contains the subindices for all unique
+% subtrees.
+matAllLinkIndices = sub2ind([intCurrentSubtreeID,intCurrentSubtreeID],matAllSubtrees(:,2),matAllSubtrees(:,3));
+
+% add some padding to pre-allocate memory in matAllSubtrees and
+% matAllLinkIndices... make a guess: "(1/4)*intLeafCount*intBootstrapCount"
+matAllSubtrees = [matAllSubtrees;zeros((1/4)*intLeafCount*intBootstrapCount,4)];
+
+% report
+fprintf('%s: starting higher-order subtree analysis\n',mfilename)
+for i = 1:intLeafCount-1
+    % fprintf('%s: processing subtrees at depth %d of %d\n',mfilename,i,intLeafCount-1)
+    
+    % Get the slice from the current tree samples corresponding to the next
+    %-in-line subtrees.
+    matTs = squeeze(matOrigTreeLinkageSet(i,:,:))';
+    
+    % See which edges haven't been processed yet (i.e. which don't yet have
+    % a subtree-index stored in the fourth column of the corresponding
+    % rows)
+    matIXToProc = find(matTs(:,4)==0);
+
+    % If there are none to process, continue to next subtree slice
+    if isempty(matIXToProc)
+        continue
+    end
+    
+
+    %%% 
+    % PROCESS SUBTREE-COUNTS 
+    % And store in matOrigTreeLinkageSet(:,4,:) and matAllSubtrees
+    
+    % the ids of nodes that refer to branch-points, not leafs, should be
+    % updated to the matAllSubtrees branch-point ids (stored in column 4 of
+    % the corresponding tree).
+
+    % we might be able to matrix/process this via subindexing
+    % gather those T-slices to process (i.e. for which the 4th column is 0)
+    matTsToProc = matTs(matIXToProc,:);    
+    % find non-leaf nodes
+    matIX = matTsToProc(:,1:2)>intLeafCount;
+    matIXToProc2 = [matIXToProc,matIXToProc];   
+    % find node ids for non-leaf nodes
+    matSubIX = sub2ind(size(matOrigTreeLinkageSet),matTsToProc(matIX) - (intLeafCount),repmat(4,size(find(matIX))),matIXToProc2(matIX));
+    clear matIXToProc2
+    matTsToProc(matIX) = matOrigTreeLinkageSet(matSubIX);
+
+    
+    % convert to indices
+    matTsToProcLinkIndices = (matTsToProc(:,1) + (matTsToProc(:,2)-1)*intCurrentSubtreeID);
+    
+    % count all unique indices that haven't been processed yet.
+    % note that no value should be bigger than intCurrentSubtreeID.
+    [matCountPerValue,matUniqueValues] = countNumberOfValues(matTsToProcLinkIndices);
+    
+    % check for all unique edges if they're already present
+    [boolPresent, matCrossIX] = ismember(matUniqueValues,matAllLinkIndices(1:intCurrentSubtreeID));
+    
+    % for the ones that are not yet present, add them as new unique links
+    % in matAllSubtrees
+    if any(~boolPresent)
+        matNewSubtreeIDs = (intCurrentSubtreeID+1:intCurrentSubtreeID+(sum(~boolPresent)))';
+        matAllSubtrees(matNewSubtreeIDs,:) = [matNewSubtreeIDs, ind2sub2([intCurrentSubtreeID,intCurrentSubtreeID],matUniqueValues(~boolPresent)), matCountPerValue(~boolPresent)];
+        
+        % and update intCurrentSubtreeID and matAllLinkIndices
+        intCurrentSubtreeID = matNewSubtreeIDs(end);
+        % note that this line does the subindex-2-index calculation
+        matAllLinkIndices(1:intCurrentSubtreeID) = (matAllSubtrees(1:intCurrentSubtreeID,2) + (matAllSubtrees(1:intCurrentSubtreeID,3)-1)*intCurrentSubtreeID);
+    end
+    
+    
+    % for the ones that are present already in matAllSubtrees, add their
+    % counts in matAllSubtrees
+    if any(boolPresent)
+        matAllSubtrees(matCrossIX(boolPresent),4) = matAllSubtrees(matCrossIX(boolPresent),4) + matCountPerValue(boolPresent);
+    end
+
+    % and put back the corresponding matAllSubtrees indices in the subtree-slice,
+    % and subsequently in matOrigTreeLinkageSet. 
+    matTsToProcLinkIndices = (matTsToProc(:,1) + (matTsToProc(:,2)-1)*intCurrentSubtreeID);
+    [boolPresent, matCrossIX] = ismember(matTsToProcLinkIndices,matAllLinkIndices(1:intCurrentSubtreeID));
+    if ~all(boolPresent)
+        error('strange, we just added all the missing links so everything should be here!')
+    end
+    matOrigTreeLinkageSet(i,4,matIXToProc) = matCrossIX;
+    
+    % done!
+    % fprintf('%s: \t %d unique subtrees gathered\n',mfilename,intCurrentSubtreeID)
+    
+end
+
+% remove empty rows resulting from memory preallocation
+matAllSubtrees(all(matAllSubtrees==0,2),:) = [];
+
+% some sanity check before finishing.
+if any(matAllSubtrees(:,4)>intBootstrapCount)
+    error('some EDGES occur more times than there are bootstraps... this isn''t possible!')
+end
+
+% normalize exact subtree score to retreival rate
+matAllSubtrees(:,4) = matAllSubtrees(:,4) / intBootstrapCount; 
+
+% we're done
+
+% if we're done, and we're not interested in anyy output, make it empty.
+if nargout==0
+    matAllSubtrees=[];
+end
+
+end% function
+
+
+
+function dataOut = lin(dataIn)
+% Help for function lin
+%
+% linearizes any matrix or cell array into a single column vector :)
+%
+% usage:
+% 
+% dataOut = lin(dataIn)
+%
+% 2010, Berend Snijder
+
+    dataOut = dataIn(:);
+
+end
+
+
+
+function [matCountPerValue,matUniqueValues,matIX2] = countNumberOfValues(x)
+
+% usage:
+%
+% [matCountPerValue,matUniqueValues,matIX2] = countNumberOfValues(x)
+%
+% Is a quick way to count how often each unique value occurs. The
+% unique values and their cross indices are returned as by "unique()"
+%
+%
+% example:
+%
+% [matCountPerValue,matUniqueValues,matIX2] = countNumberOfValues(x)
+%
+% bar(matUniqueValues,matCountPerValue)
+%
+% 2009, Berend Snijder
+
+    [x,matSortIX] = sort(x);
+    
+    if nargout==3
+        [matUniqueValues,matIX,matIX2] = unique(x,'last');
+        % sort back matIX2 so that it corresponds to the original unsorted
+        % "x"
+        [~,matSortIX] = sort(matSortIX);        
+        matIX2 = matIX2(matSortIX);
+    else
+        [matUniqueValues,matIX] = unique(x,'last');
+    end
+    
+    matCountPerValue = NaN(size(matUniqueValues));
+    
+    matPreviousIX = 0;
+    for iValue = 1:size(matUniqueValues,1)
+        matCountPerValue(iValue) = matIX(iValue)-matPreviousIX;
+        matPreviousIX = matIX(iValue);
+    end
+    
+    
+end
+
+
+
+function matCompleteDataBinIX = ind2sub2(matBinDimensions,matSubIndices) %#ok<STOUT,INUSD>
+    % Wrapper for ind2sub, so we can handle different cases dinamically,
+    % and ouput the output in a matrix rather than in independent
+    % variables. (Could also be done by catching output in a cell array?)  
+    
+    % Berend Snijder
+    
+    str2exec = '[I1';
+    for i = 2:size(matBinDimensions,2)
+        str2exec = [str2exec,sprintf(',I%d',i)]; %#ok<AGROW>
+    end
+    str2exec = [str2exec,']'];
+    
+    eval(sprintf('%s = ind2sub(matBinDimensions,matSubIndices);',str2exec));
+    eval(sprintf('matCompleteDataBinIX = %s;',str2exec));
+    
+end
+
+
+function drawBestTree(matAllSubtrees, matOrigTreeLinkageSet,datalabels4bootstrap)
+
+    % count number of bootstraps.
+    intBootstrapCount = size(matOrigTreeLinkageSet,3);
+    
+    % calculate the sum subtree score for each tree
+    matSumSubtreeFrequencyPerTree = NaN(size(matOrigTreeLinkageSet,3),1);
+    for iTree = 1:size(matOrigTreeLinkageSet,3)
+        % sum subtree scores
+        matSumSubtreeFrequencyPerTree(iTree) = sum(matAllSubtrees(matOrigTreeLinkageSet(:,4,iTree),4));
+    end    
+    
+    % find the tree with the highest sum of subtree frequencies
+    [intTreeScore,intMaxIX] = max(matSumSubtreeFrequencyPerTree);
+
+    % store best tree for output
+    matBestTree = matOrigTreeLinkageSet(:,1:3,intMaxIX);
+
+    % create a phytree object from linkage, present in the Matlab
+    % Bioinformatics Toolbox. Note that only the first three columns should be
+    % passed, as the fourth column contains the subtree-id for each
+    % branchpoint. 
+    if nargin==3
+        objPhyTree = phytree(matBestTree,datalabels4bootstrap);
+    else
+        objPhyTree = phytree(matBestTree);
+    end
+    
+    % plot the tree
+    h = plot(objPhyTree,'Type','square');
+    % set(gca,'YMinorTick','off','YTick',[])
+    drawnow
+
+    for iBranch = 1:length(h.branchNodeLabels)
+
+        % get the handle to the current branch
+        hBranch = h.branchNodeLabels(iBranch);
+
+        % calculate absolute and percentage occurence of current branch
+        intSubtreePercent = 100*matAllSubtrees(matOrigTreeLinkageSet(iBranch,4,intMaxIX),4);
+        intSubtreeCount = round(intBootstrapCount*matAllSubtrees(matOrigTreeLinkageSet(iBranch,4,intMaxIX),4));
+
+        % add text-label to each branch, different for root than for other branches
+        if iBranch == length(h.branchNodeLabels)
+            % root
+            set(hBranch,'Visible','on','String',sprintf('\\color[rgb]{0 0 0.75}subtree %% and absolute count (%.1g%% and %d times for root)',intSubtreePercent,intSubtreeCount), ...
+                'FontSize',8,...
+                'Interpreter','TeX',...
+                'HorizontalAlignment','center',...
+                'VerticalAlignment','bottom',...
+                'Rotation',90)
+        else
+            % branch
+            if intSubtreePercent < 1
+                set(hBranch,'Visible','on','String',sprintf('\\color[rgb]{0 0 0.75}%.1g%% (%d)',intSubtreePercent,intSubtreeCount),...
+                    'FontSize',7,...
+                    'Interpreter','TeX')
+            else
+                set(hBranch,'Visible','on','String',sprintf('\\color[rgb]{0 0 0.75}%.1f%% (%d)',intSubtreePercent,intSubtreeCount),...
+                    'FontSize',7,...
+                    'Interpreter','TeX')                
+            end
+        end
+
+    end
+
+
+    title(sprintf('Tree with highest sum of subtree frequencies (%.1f) in %d bootstrap trees.',intTreeScore,intBootstrapCount))
+
+    hold off
+
+    drawnow
+    
+end
+##### SOURCE END #####
+--></body></html>
